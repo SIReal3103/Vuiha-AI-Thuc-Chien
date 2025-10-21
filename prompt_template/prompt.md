@@ -1,28 +1,31 @@
-**Tên chương trình:** **VIỆT NAM: 80 NĂM RỰC RỠ**
-**MC:** (Tên MC)
-**Thời lượng:** 80 giây
+### **GIẢI THÍCH CÁC THAM SỐ NÂNG CAO:**
+
+*   **`negative_prompt`**: Yêu cầu AI *tránh* tạo ra những yếu tố không mong muốn (ví dụ: hình ảnh mờ, nhân vật biến dạng, các chi tiết sai thời đại).
+*   **`lighting`**: Mô tả cụ thể loại ánh sáng và hiệu ứng của nó để tạo ra không khí cho cảnh quay (ví dụ: ánh sáng vàng ấm của bình minh, ánh sáng tương phản gắt gao).
+*   **`color_palette`**: Chỉ định tông màu chủ đạo của cảnh (ví dụ: tông màu hoài cổ sepia, màu rực rỡ của lễ hội, màu xanh lạnh của công nghệ).
+*   **`composition`**: Hướng dẫn AI về cách sắp xếp các yếu tố trong khung hình theo các quy tắc điện ảnh (ví dụ: quy tắc 1/3, góc máy thấp, cận cảnh).
+*   **`details`**: Thêm vào các chi tiết nhỏ nhưng quan trọng để tăng tính chân thực (ví dụ: hiệu ứng hạt phim, tia sáng lóe qua ống kính).
 
 ---
 
-### **KỊCH BẢN CHI TIẾT**
-
-**(Bối cảnh: MC đứng trên một sân khấu ảo hiện đại, phía sau là màn hình LED khổng lồ hiển thị những hình ảnh trừu tượng của lá cờ Việt Nam đang chuyển động.)**
-
----
+### **KỊCH BẢN VÀ PROMPT JSON CHI TIẾT**
 
 #### **PHÂN CẢNH 1 (0-8s): KHÚC KHẢI HOÀN CỦA HIỆN TẠI**
 
-*   **Lời dẫn của MC:** *(Giọng hào hùng, trang trọng)* "Kính thưa quý vị khán giả! 80 năm! Một hành trình dài với những dấu son không thể phai mờ. Chào mừng đến với chương trình đặc biệt, nhìn lại 80 năm ngày Quốc khánh nước Cộng hòa Xã hội Chủ nghĩa Việt Nam!"
+*   **Lời dẫn của MC:** "Kính thưa quý vị khán giả! 80 năm! Một hành trình dài với những dấu son không thể phai mờ. Chào mừng đến với chương trình đặc biệt, nhìn lại 80 năm ngày Quốc khánh nước Cộng hòa Xã hội Chủ nghĩa Việt Nam!"
 
-*   **Miêu tả hình ảnh:** Một cú máy bay không người lái (drone) bay vút lên cao vào buổi tối, quay toàn cảnh thành phố Hồ Chí Minh hoặc Hà Nội rực rỡ ánh đèn và pháo hoa mừng ngày lễ. Lá cờ đỏ sao vàng khổng lồ được chiếu lên các tòa nhà chọc trời. Không khí vô cùng sôi động và tự hào.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "An epic hyper-realistic 8k aerial drone shot flying over a modern metropolis like Ho Chi Minh City at night, celebrating Vietnam's National Day. The sky is filled with spectacular fireworks. The Landmark 81 skyscraper is illuminated with a giant projection of the Vietnamese flag. The streets are alive with vibrant city lights and traffic trails. The mood is celebratory, patriotic, and awe-inspiring.",
-      "style": "cinematic, hyper-realistic, vibrant",
+      "prompt": "An epic, hyper-realistic 8K aerial drone shot, soaring upwards over a futuristic Ho Chi Minh City at night. The sky explodes with magnificent, multi-colored fireworks celebrating Vietnam's 80th National Day. The Landmark 81 skyscraper is a beacon, its entire facade a giant, glowing projection of the Vietnamese flag. Below, streets are rivers of light from traffic trails. The atmosphere is overwhelmingly celebratory and patriotic.",
+      "negative_prompt": "blurry, low-resolution, generic buildings, cartoonish fireworks, dark unlit areas, empty streets",
+      "style": "cinematic, hyper-realistic, high dynamic range (HDR)",
       "duration": 8,
-      "camera_movement": "slow rising crane shot"
+      "camera_movement": "smooth crane shot moving upwards and slightly rotating",
+      "lighting": "vibrant neon glow from city lights, bright explosive light from fireworks, deep night sky contrast",
+      "color_palette": "deep blues, blacks, vibrant reds and yellows from the flag and fireworks, electric white",
+      "composition": "wide establishing shot, Landmark 81 centered as the focal point",
+      "details": "crisp reflections on glass buildings, visible trails of individual fireworks, sense of immense scale"
     }
     ```
 
@@ -30,17 +33,20 @@
 
 #### **PHÂN CẢNH 2 (8-16s): ĐÊM DÀI NÔ LỆ**
 
-*   **Lời dẫn của MC:** *(Giọng trầm xuống, đầy suy tư)* "Nhưng để có được ánh sáng hôm nay, dân tộc ta đã phải đi qua những đêm dài nô lệ, dưới gót giày của thực dân, lầm than và tủi cực."
+*   **Lời dẫn của MC:** "Nhưng để có được ánh sáng hôm nay, dân tộc ta đã phải đi qua những đêm dài nô lệ, dưới gót giày của thực dân, lầm than và tủi cực."
 
-*   **Miêu tả hình ảnh:** Chuyển cảnh đột ngột sang tông màu đen trắng hoặc nâu đỏ (sepia). Hình ảnh những người nông dân gầy gò làm việc trên cánh đồng, những người phu xe kéo mệt mỏi, và ánh mắt khao khát tự do của họ. Hình ảnh mang tính biểu tượng, không quá bi lụy mà tập trung vào sức sống tiềm tàng và sự kiên cường trong ánh mắt.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A powerful historical recreation in black and white, grainy film style. A close-up shot of a Vietnamese farmer's determined face, weathered by sun and hardship under French colonial rule. In the background, silhouettes of people working in rice paddies under a harsh sun. The mood is somber, resilient, and full of unspoken strength.",
-      "style": "historical film, high contrast, emotional",
+      "prompt": "A powerful, emotional historical recreation. An extreme close-up on the weathered, determined face of an elderly Vietnamese farmer under French colonial rule. His eyes hold a universe of resilience and unspoken strength. The background is a shallow depth of field, showing blurred silhouettes of people toiling in a sun-scorched rice paddy.",
+      "negative_prompt": "smiling, well-fed, clean clothes, modern elements, cartoonish features, neutral expression",
+      "style": "vintage 1930s black and white film, high contrast, grainy texture",
       "duration": 8,
-      "camera_movement": "slow zoom in"
+      "camera_movement": "very slow, subtle zoom-in on the farmer's eyes",
+      "lighting": "harsh, dramatic top-down sunlight creating deep shadows, chiaroscuro effect on the face",
+      "color_palette": "monochromatic, deep blacks, stark whites, muted greys, sepia tint",
+      "composition": "tight close-up, rule of thirds, focus entirely on the eyes",
+      "details": "visible film grain, dust and scratches effect, sweat on the brow, texture of wrinkled skin"
     }
     ```
 
@@ -48,35 +54,42 @@
 
 #### **PHÂN CẢNH 3 (16-24s): MÙA THU CÁCH MẠNG**
 
-*   **Lời dẫn của MC:** *(Giọng nói trỗi dậy, đầy khí thế)* "Và rồi, Mùa thu tháng Tám năm 1945 đã đến! Cả dân tộc triệu người như một, nhất tề vùng lên, phá tan xiềng xích!"
+*   **Lời dẫn của MC:** "Và rồi, Mùa thu tháng Tám năm 1945 đã đến! Cả dân tộc triệu người như một, nhất tề vùng lên, phá tan xiềng xích!"
 
-*   **Miêu tả hình ảnh:** Màu sắc dần trở lại. Một biển người cuồn cuộn với cờ đỏ sao vàng tiến về quảng trường. Hình ảnh được quay từ góc thấp, tạo cảm giác hùng vĩ. Không khí sục sôi, mạnh mẽ.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A dynamic, colorized historical footage style shot. A low-angle view of a massive, roaring crowd during the August Revolution in Hanoi. Thousands of people marching with red flags with yellow stars, revolutionary banners. Their faces show fierce determination and triumphant joy. The atmosphere is electric and powerful.",
-      "style": "colorized historical, epic, dynamic",
+      "prompt": "A dynamic, epic recreation of the August Revolution. A low-angle shot from within a massive, roaring crowd marching towards the Hanoi Opera House. Thousands of determined faces are visible, shouting slogans. The air is thick with energy as countless red flags with yellow stars wave like a sea of fire. The scene transitions from black and white to color midway through.",
+      "negative_prompt": "static, passive crowd, empty spaces, modern clothing, few flags",
+      "style": "colorized historical footage, epic scale, gritty realism",
       "duration": 8,
-      "camera_movement": "sweeping low-angle pan"
+      "camera_movement": "handheld, sweeping pan that moves with the crowd to convey energy",
+      "lighting": "bright, slightly overexposed daylight suggesting a historic, bright new day",
+      "color_palette": "dominant revolutionary red and yellow, with muted, desaturated background colors to make the flags pop",
+      "composition": "low-angle to empower the crowd, leading lines created by the marching people",
+      "details": "motion blur, authentic period clothing, passionate facial expressions"
     }
     ```
+*(Và tiếp tục cho các phân cảnh còn lại...)*
 
 ---
 
 #### **PHÂN CẢNH 4 (24-32s): GIỌNG NÓI LỊCH SỬ**
 
-*   **Lời dẫn của MC:** *(Giọng trang nghiêm, xúc động, ngắt nhịp)* "Ngày 2 tháng 9... Tại quảng trường Ba Đình lịch sử... Chủ tịch Hồ Chí Minh đã đọc bản Tuyên ngôn Độc lập, khai sinh ra nước Việt Nam Dân chủ Cộng hòa!"
+*   **Lời dẫn của MC:** "Ngày 2 tháng 9... Tại quảng trường Ba Đình lịch sử... Chủ tịch Hồ Chí Minh đã đọc bản Tuyên ngôn Độc lập, khai sinh ra nước Việt Nam Dân chủ Cộng hòa!"
 
-*   **Miêu tả hình ảnh:** Hình ảnh Bác Hồ trên lễ đài, giọng nói vang vọng. Máy quay lướt qua biển người bên dưới, ai nấy đều ngẩng đầu lắng nghe trong im lặng và xúc động. Ánh nắng mùa thu rực rỡ chiếu rọi.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A photorealistic, respectful recreation of President Ho Chi Minh reading the Declaration of Independence at Ba Dinh Square. The camera is positioned behind him, looking out at an endless sea of people. Sunlight filters through the trees. The focus is on the scale and historical significance of the moment. The mood is solemn, monumental, and deeply emotional.",
-      "style": "photorealistic, historical, cinematic",
+      "prompt": "A photorealistic, respectful recreation of President Ho Chi Minh on the podium at Ba Dinh Square. The camera is positioned behind his shoulder, showing the historic document in his hands, looking out at an endless sea of people listening intently. A gentle breeze rustles the flag behind him.",
+      "negative_prompt": "distracting elements, modern technology, casual crowd, incorrect attire, empty podium",
+      "style": "photorealistic, cinematic, solemn",
       "duration": 8,
-      "camera_movement": "slow push-in towards the crowd"
+      "camera_movement": "slow, respectful push-in towards the crowd over Ho Chi Minh's shoulder",
+      "lighting": "bright, clear autumn sunlight, creating a slight halo effect, long shadows symbolizing the end of an era",
+      "color_palette": "natural, warm tones, the red of the flag is vibrant but not overwhelming",
+      "composition": "over-the-shoulder shot, creating a sense of being there, immense scale",
+      "details": "texture of the aged paper, meticulous detail on clothing, individual faces visible in the crowd"
     }
     ```
 
@@ -86,104 +99,117 @@
 
 *   **Lời dẫn của MC:** "Nền độc lập non trẻ đã phải đi qua những cuộc chiến tranh vệ quốc vĩ đại, được tôi luyện trong gian lao và trả giá bằng xương máu."
 
-*   **Miêu tả hình ảnh:** Một chuỗi hình ảnh chuyển cảnh nhanh (montage) đầy tính nghệ thuật. Một người lính đi trong mưa. Một người mẹ tiễn con. Một cô gái giao liên băng rừng. Tất cả đều được thể hiện một cách tượng trưng, không bạo lực, nhấn mạnh sự hy sinh và lòng dũng cảm.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "An artistic and symbolic montage of the Vietnam War era. A young female volunteer carrying supplies through a misty jungle. A silhouette of a soldier against a dramatic sunset. A family's emotional reunion. The scenes are shot with beautiful, poignant lighting, focusing on human emotion and resilience, not combat.",
-      "style": "cinematic, symbolic, painterly",
+      "prompt": "An artistic, symbolic montage about resilience during war. A silhouette of a young soldier against a blood-red sunset. A young female volunteer's determined eyes seen through thick jungle leaves. A mother's hand tightly gripping her son's before he leaves. The focus is on emotion and sacrifice, not combat.",
+      "negative_prompt": "graphic violence, gore, explicit combat, guns firing, explosions",
+      "style": "painterly, cinematic, symbolic, high-contrast silhouettes",
       "duration": 8,
-      "effect": "fast cuts, cross-dissolve"
+      "effect": "artistic cross-dissolves between three distinct, powerful images",
+      "lighting": "dramatic, low-key lighting, rim lighting on silhouettes, god rays through jungle canopy",
+      "color_palette": "deep reds, dark greens, earthy browns, heavily desaturated tones",
+      "composition": "strong silhouettes, emotional close-ups on hands and eyes",
+      "details": "rain drops, mist in the jungle, texture of coarse fabric"
     }
     ```
-
 ---
 
 #### **PHÂN CẢNH 6 (40-48s): VƯƠN MÌNH TỪ ĐỐNG TRO TÀN**
 
-*   **Lời dẫn của MC:** *(Giọng đầy tự hào)* "Hòa bình lập lại, từ trong hoang tàn đổ nát, Việt Nam đã vươn mình đứng dậy, viết nên câu chuyện thần kỳ về tái thiết và đổi mới."
+*   **Lời dẫn của MC:** "Hòa bình lập lại, từ trong hoang tàn đổ nát, Việt Nam đã vươn mình đứng dậy, viết nên câu chuyện thần kỳ về tái thiết và đổi mới."
 
-*   **Miêu tả hình ảnh:** Một đoạn video tua nhanh thời gian (hyperlapse). Bắt đầu từ một cánh đồng lúa xanh mướt, rồi các nhà máy, khu công nghiệp mọc lên, và cuối cùng biến thành một thành phố hiện đại với những cây cầu biểu tượng như cầu Rồng ở Đà Nẵng đang phun lửa.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A stunning hyperlapse video showing Vietnam's economic transformation. The scene starts with a tranquil rice paddy at dawn, which seamlessly transforms into a bustling modern factory, and then evolves into the iconic Dragon Bridge in Da Nang at night, breathing fire and water. The transformation is smooth and visually spectacular.",
-      "style": "hyperlapse, dynamic, modern",
+      "prompt": "A spectacular time-lapse hyper-morph sequence showing Vietnam's economic miracle. The scene begins on a post-war desolate field, which seamlessly transforms into a lush, green rice paddy. Scaffolding grows like vines, forming a modern factory. The factory then morphs into the stunning Dragon Bridge in Da Nang at night, breathing a plume of fire.",
+      "negative_prompt": "abrupt cuts, disjointed transitions, unrealistic architecture, static image",
+      "style": "hyperlapse, morphing CGI, dynamic and seamless",
       "duration": 8,
-      "camera_movement": "static time-lapse with morphing elements"
+      "camera_movement": "static camera, witnessing the transformation unfold in fast-forward",
+      "lighting": "transitions from bleak grey light to warm sunrise to vibrant city night lights",
+      "color_palette": "shifts from grey/browns to vibrant greens, then to industrial metallics, ending with neon blues and fiery oranges",
+      "composition": "centered subject, constant horizon line for a smooth transition",
+      "details": "sparks from construction, steam from factories, realistic fire and water from the dragon bridge"
     }
     ```
-
 ---
 
 #### **PHÂN CẢNH 7 (48-56s): BẢN SẮC NGÀN NĂM**
 
 *   **Lời dẫn của MC:** "Phát triển nhưng không hòa tan. Việt Nam vẫn luôn giữ trọn vẹn bản sắc văn hóa ngàn năm văn hiến."
 
-*   **Miêu tả hình ảnh:** Một chuỗi hình ảnh rực rỡ sắc màu về văn hóa Việt Nam. Tà áo dài thướt tha trong gió, những chiếc đèn lồng Hội An lung linh, một nghệ nhân gốm Bát Tràng, một màn múa rối nước sinh động.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A vibrant and colorful montage of Vietnamese culture. A close-up of a graceful woman in a white Ao Dai against a backdrop of ancient temple architecture. The glowing lanterns of Hoi An reflected in the river. An artisan's hands shaping pottery on a wheel. The mood is beautiful, proud, and rich in tradition.",
-      "style": "vibrant, cinematic, cultural",
+      "prompt": "A vibrant, quick-cut montage celebrating Vietnamese culture. A graceful woman in a flowing white Ao Dai walking through the Temple of Literature. An extreme close-up of an artisan's hands meticulously applying paint to Bat Trang ceramics. The shimmering, magical lanterns of Hoi An at night reflected in the river. A dynamic shot of a water puppet show performance.",
+      "negative_prompt": "dull colors, modern objects, touristy look, empty scenes, generic",
+      "style": "cinematic, vibrant color grading, beautiful and elegant",
       "duration": 8,
-      "effect": "artistic quick cuts"
+      "effect": "fast, rhythmic cuts perfectly timed to music",
+      "lighting": "warm, soft, inviting light for Ao Dai and ceramics; magical, glowing light for lanterns",
+      "color_palette": "a rich tapestry of traditional colors: imperial reds, golds, deep greens, jade, warm lantern yellows",
+      "composition": "elegant close-ups, symmetrical shots, beautiful shallow depth of field",
+      "details": "texture of silk, reflections in water, intricate patterns on ceramics"
     }
     ```
-
 ---
 
 #### **PHÂN CẢNH 8 (56-64s): DẤU ẤN TRÊN TRƯỜNG QUỐC TẾ**
 
 *   **Lời dẫn của MC:** "Và hôm nay, Việt Nam là một quốc gia có trách nhiệm, một người bạn tin cậy, tự tin khẳng định vị thế của mình trên trường quốc tế."
 
-*   **Miêu tả hình ảnh:** Hình ảnh vệ tinh Vinasat bay trong không gian. Xe ô tô điện VinFast lăn bánh trên đường phố quốc tế. Các nhà khoa học trẻ Việt Nam trong phòng thí nghiệm hiện đại.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A sleek, high-tech montage of modern Vietnam's global achievements. A VinFast electric car driving through a futuristic city. A Vietnamese scientist in a state-of-the-art laboratory looking at a DNA helix on a screen. The Vinasat satellite orbiting the Earth with the curve of the planet below. The aesthetic is clean, modern, and forward-looking.",
-      "style": "high-tech, clean, futuristic",
+      "prompt": "A sleek, high-tech montage of modern Vietnam's global presence. A VinFast electric car with futuristic headlights gliding on a wet, neon-lit international street. A Vietnamese scientist in a sterile, state-of-the-art laboratory examining a glowing holographic display. The Vinasat satellite majestically orbiting the Earth, with the sun glinting off its solar panels.",
+      "negative_prompt": "cluttered, old technology, messy lab, blurry images, generic car",
+      "style": "high-tech, futuristic, clean aesthetic, polished",
       "duration": 8,
-      "camera_movement": "dynamic motion graphics and live action"
+      "camera_movement": "dynamic, smooth motion graphics combined with slick live-action shots",
+      "lighting": "clean, high-key studio lighting for the lab; anamorphic lens flares for the car; hard sunlight in space",
+      "color_palette": "cool color palette of blues, silvers, and whites with sharp, glowing accents",
+      "composition": "dynamic angles, focus on clean lines and modern design",
+      "details": "polished metallic surfaces, glowing data streams, lens flares, detailed reflection of Earth on the satellite"
     }
     ```
-
 ---
 
 #### **PHÂN CẢNH 9 (64-72s): NGỌN LỬA TRAO TAY**
 
 *   **Lời dẫn của MC:** "80 năm, ngọn lửa của khát vọng độc lập, tự do và hùng cường đã được trao lại cho thế hệ trẻ - những người sẽ viết tiếp trang sử vàng của dân tộc."
 
-*   **Miêu tả hình ảnh:** Những hình ảnh đầy hy vọng về thế hệ trẻ. Một em bé với lá cờ Việt Nam vẽ trên má cười rạng rỡ. Một nhóm sinh viên đang làm việc trong một không gian khởi nghiệp (startup) năng động. Các vận động viên ăn mừng chiến thắng.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "A heartwarming and optimistic slow-motion shot of a group of diverse young Vietnamese people. A little girl laughing with a flag painted on her cheek. University students brainstorming in a bright, modern classroom. A young tech entrepreneur presenting her project. The lighting is warm and golden, symbolizing a bright future.",
-      "style": "optimistic, heartwarming, slow-motion",
+      "prompt": "A heartwarming, optimistic slow-motion shot. An adorable little girl with a small Vietnamese flag painted on her cheek laughs directly at the camera. A diverse group of university students in a bright, modern co-working space energetically brainstorm around a table. A young female athlete raises a trophy, pure joy on her face.",
+      "negative_prompt": "sad expressions, dark lighting, bleak environment, blurry faces, old-fashioned setting",
+      "style": "optimistic, heartwarming, commercial-grade slow-motion (120fps)",
       "duration": 8,
-      "camera_movement": "gentle orbiting shot"
+      "camera_movement": "gentle orbiting shot around the subjects, creating a feeling of inclusion",
+      "lighting": "warm, soft, backlit 'golden hour' glow, creating a hopeful and dreamlike atmosphere",
+      "color_palette": "bright, warm, optimistic colors; pastels, whites, and natural skin tones",
+      "composition": "intimate medium shots and close-ups, shallow depth of field to focus on their hopeful expressions",
+      "details": "genuine smiles, catchlights in their eyes, dust motes floating in the golden light"
     }
     ```
-
 ---
 
 #### **PHÂN CẢNH 10 (72-80s): TƯƠNG LAI RẠNG RỠ**
 
-*   **Lời dẫn của MC:** *(Giọng nói vang lên, đầy tự hào và quả quyết)* "Việt Nam! Hành trình 80 năm rực rỡ và một tương lai còn vĩ đại hơn nữa đang chờ! Xin kính chào và hẹn gặp lại!"
+*   **Lời dẫn của MC:** "Việt Nam! Hành trình 80 năm rực rỡ và một tương lai còn vĩ đại hơn nữa đang chờ! Xin kính chào và hẹn gặp lại!"
 
-*   **Miêu tả hình ảnh:** Lá cờ đỏ sao vàng tung bay đầy kiêu hãnh trên nền trời xanh. Hình ảnh lá cờ sau đó hòa vào hình ảnh đất nước Việt Nam hình chữ S nhìn từ không gian, phát sáng rực rỡ.
-
-*   **Prompt JSON cho AI:**
+*   **Prompt JSON cho AI (Chi tiết):**
     ```json
     {
-      "prompt": "An epic final shot. The Vietnamese flag waving majestically in slow motion against a brilliant blue sky with sun flares. The camera slowly pulls back, and the flag dissolves into a glowing, golden map of Vietnam as seen from space. The image is powerful, patriotic, and filled with hope for the future. The text 'VIỆT NAM: 80 NĂM RỰC RỠ' appears elegantly on screen.",
-      "style": "epic, symbolic, majestic",
+      "prompt": "The ultimate epic final shot. An immense, photorealistic Vietnamese flag waves majestically in cinematic slow motion, filling the entire frame against a brilliant blue sky. The camera slowly pulls back, and as it does, the flag's fabric seamlessly dissolves into a glowing, golden, 3D map of Vietnam as seen from the high orbit of space. The S-shaped country shines brightly against the darkness. The text 'VIỆT NAM: 80 NĂM RỰC RỠ' appears elegantly.",
+      "negative_prompt": "small flag, cloudy sky, wrinkled flag, unrealistic Earth, blurry map, generic font",
+      "style": "epic, majestic, symbolic, high-end visual effects",
       "duration": 8,
-      "camera_movement": "slow pull-back and dissolve"
+      "camera_movement": "slow, dramatic pull-back (dolly zoom effect) combined with a dissolve transition",
+      "lighting": "brilliant, epic sunlight creating beautiful ripples and texture on the flag's fabric, ethereal glow from the map",
+      "color_palette": "vibrant red, gold, and deep blue of the sky and space",
+      "composition": "starts as a full frame of the flag, ends with the S-shaped map perfectly centered",
+      "details": "realistic cloth physics, atmospheric haze on Earth's curve, subtle starlight"
     }
     ```
