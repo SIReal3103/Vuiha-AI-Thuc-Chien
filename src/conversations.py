@@ -52,6 +52,65 @@ def save_conversation(conv: dict):
             break
     _write_index(idx)
 
-def append_message(conv: dict, role: str, content: str):
-    conv["messages"].append({"role": role, "content": content, "at": int(time.time() * 1000)})
+def append_message(conv: dict, role: str, content: str, message_type: str = "text"):
+    """
+    Append a message to the conversation.
+    
+    Args:
+        conv (dict): The conversation object
+        role (str): The role of the message sender (user, assistant, system)
+        content (str): The content of the message
+        message_type (str): The type of message (text, image)
+    """
+    message = {
+        "role": role,
+        "content": content,
+        "at": int(time.time() * 1000),
+        "type": message_type
+    }
+    conv["messages"].append(message)
     save_conversation(conv)
+
+
+def append_image_message(conv: dict, role: str, content: str, image_data: bytes, filename: str = None):
+    """
+    Append an image message to the conversation.
+    
+    Args:
+        conv (dict): The conversation object
+        role (str): The role of the message sender (user, assistant)
+        content (str): The text content associated with the image
+        image_data (bytes): The image data in bytes
+        filename (str): Optional filename for the image
+    """
+    import os
+    import base64
+    
+    # Create images directory for this conversation if it doesn't exist
+    conv_images_dir = Path(CONV_DIR) / conv["id"] / "images"
+    conv_images_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate a filename if not provided
+    if not filename:
+        timestamp = int(time.time())
+        filename = f"image_{timestamp}.png"
+    
+    # Save the image file
+    image_path = conv_images_dir / filename
+    with open(image_path, "wb") as f:
+        f.write(image_data)
+    
+    # Create message with image reference
+    message = {
+        "role": role,
+        "content": content,
+        "at": int(time.time() * 1000),
+        "type": "image",
+        "image_path": str(image_path.relative_to(CONV_DIR.parent.parent)),  # Store relative path
+        "filename": filename
+    }
+    
+    conv["messages"].append(message)
+    save_conversation(conv)
+    
+    return str(image_path)
