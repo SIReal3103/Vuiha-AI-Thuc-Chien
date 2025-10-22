@@ -1,0 +1,48 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+*.log
+*.pot
+*.mo
+*.pyproj
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+*.bak
+.DS_Store
+
+# --- Virtual Environment ---
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Environment Variables ---
+.env
+.env.local
+.env.*.local
+.env.example  # optional if you want to share the template
+
+# --- Cache / Temporary ---
+logs/
+data/conversations/*.json
+data/conversations.index.json
+.idea/
+.vscode/
+*.sqlite3
+*.db
+
+# --- System ---
+Thumbs.db
+*.swp
+*.swo
+
+# --- Jupyter / Notebooks ---
+.ipynb_checkpoints/
