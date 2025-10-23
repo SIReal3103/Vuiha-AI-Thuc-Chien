@@ -14,8 +14,10 @@ from .conversations import (
     load_conversation,
     append_message,
 )
-from .api import chat_completions
+from .api import chat_completions, generate_video_api_call, download_video_api_call
 from .logger import log_json
+import tempfile # For handling temporary video files
+import webbrowser # For opening downloaded video
 
 # ---- Model list / defaults ----
 # Try to import from constants.py if you created it; otherwise fallback.
@@ -26,7 +28,7 @@ except Exception:
     AVAILABLE_MODELS = [
         {"name": "Gemini 2.5 Pro", "value": "gemini-2.5-pro"},
         {"name": "Gemini 2.5 Flash", "value": "gemini-2.5-flash"},
-        {"name": "Veo 3", "value": "veo 3"},
+        {"name": "Veo 3", "value": "veo-3.0-generate-001"}, # Updated model name for video
         {"name": "Imagen 4 (Google Vertex AI)", "value": "imagen-4"},
         {"name": "Gemini 2.5 Flash Image Preview", "value": "gemini-2.5-flash-image-preview"},
         {"name": "Gemini 2.5 Flash Preview TTS", "value": "gemini-2.5-flash-preview-tts"},
@@ -86,10 +88,12 @@ class ChatGUI(tk.Tk):
             topbar,
             textvariable=self.api_var,
             state="readonly",
-            values=["Chat Completions (/chat/completions)"],
+            values=["Chat Completions (/chat/completions)", "Video Generation"],
             width=34,
         )
         self.api_combo.pack(side="left", padx=(6, 12))
+        self.api_combo.bind("<<ComboboxSelected>>", self.on_api_select)
+
 
         ttk.Label(topbar, text="Model:").pack(side="left")
         self.model_combo = ttk.Combobox(
@@ -115,6 +119,49 @@ class ChatGUI(tk.Tk):
         # API base indicator (from env)
         api_base = os.getenv("THUCCHIEN_API_BASE", "https://api.thucchien.ai")
         ttk.Label(topbar, text=f"@ {api_base}", foreground="#666").pack(side="right")
+
+        # Video generation parameters frame
+        self.video_params_frame = ttk.Frame(self.right, padding=5)
+        # self.video_params_frame.grid(row=0, column=0, sticky="we", pady=(0, 6)) # This will be managed by on_api_select
+
+        ttk.Label(self.video_params_frame, text="Negative Prompt:").grid(row=0, column=0, sticky="w")
+        self.negative_prompt_var = tk.StringVar(value="blurry, low quality")
+        self.negative_prompt_entry = ttk.Entry(self.video_params_frame, textvariable=self.negative_prompt_var, width=40)
+        self.negative_prompt_entry.grid(row=0, column=1, sticky="we", padx=(6, 12))
+
+        ttk.Label(self.video_params_frame, text="Aspect Ratio:").grid(row=1, column=0, sticky="w")
+        self.aspect_ratio_var = tk.StringVar(value="16:9")
+        self.aspect_ratio_combo = ttk.Combobox(
+            self.video_params_frame,
+            textvariable=self.aspect_ratio_var,
+            state="readonly",
+            values=["16:9", "9:16", "1:1"],
+            width=10,
+        )
+        self.aspect_ratio_combo.grid(row=1, column=1, sticky="we", padx=(6, 12))
+
+        ttk.Label(self.video_params_frame, text="Resolution:").grid(row=2, column=0, sticky="w")
+        self.resolution_var = tk.StringVar(value="720p")
+        self.resolution_combo = ttk.Combobox(
+            self.video_params_frame,
+            textvariable=self.resolution_var,
+            state="readonly",
+            values=["720p", "1080p"],
+            width=10,
+        )
+        self.resolution_combo.grid(row=2, column=1, sticky="we", padx=(6, 12))
+
+        ttk.Label(self.video_params_frame, text="Person Generation:").grid(row=3, column=0, sticky="w")
+        self.person_generation_var = tk.StringVar(value="allow_all")
+        self.person_generation_combo = ttk.Combobox(
+            self.video_params_frame,
+            textvariable=self.person_generation_var,
+            state="readonly",
+            values=["allow_all", "deny_all"],
+            width=15,
+        )
+        self.person_generation_combo.grid(row=3, column=1, sticky="we", padx=(6, 12))
+
 
         # Chat history
         self.history = ScrolledText(self.right, wrap="word", height=22, state="disabled")
@@ -144,6 +191,26 @@ class ChatGUI(tk.Tk):
         if self.conv_list.size() > 0:
             self.conv_list.selection_set(0)
             self.on_open_conv()
+
+        # Initial API selection state
+        self.on_api_select()
+
+    def on_api_select(self, _event=None):
+        selected_api = self.api_var.get()
+        if selected_api == "Video Generation":
+            self.ws_check.pack_forget() # Hide web search for video generation
+            self.temp_spin.pack_forget() # Hide temperature for video generation
+            self.video_params_frame.grid(row=0, column=0, sticky="we", pady=(0, 6))
+            # Adjust model options for video generation
+            self.model_combo.config(values=["veo-3.0-generate-001"])
+            self.model_combo.set("veo-3.0-generate-001")
+        else:
+            self.video_params_frame.grid_forget()
+            self.ws_check.pack(side="left", padx=(12, 6)) # Show web search
+            self.temp_spin.pack(side="left", padx=(6, 12)) # Show temperature
+            # Restore all models for chat completions
+            self.model_combo.config(values=[m["value"] for m in AVAILABLE_MODELS])
+            self.model_combo.set(DEFAULT_MODEL) # Reset to default chat model
 
     # ---------- Conversations ----------
     def refresh_convs(self):
@@ -212,56 +279,112 @@ class ChatGUI(tk.Tk):
 
         # lock UI while calling API
         self.send_btn.configure(state="disabled")
-        self.status.set("Calling /chat/completions...")
+        self.status.set("Calling API...")
 
-        threading.Thread(target=self._call_chat_api_threadsafe, daemon=True).start()
+        threading.Thread(target=self._call_api_threadsafe, daemon=True).start()
 
-    def _call_chat_api_threadsafe(self):
+    def _call_api_threadsafe(self):
         start = time.time()
+        selected_api = self.api_var.get()
         try:
-            messages = [
-                {"role": m["role"], "content": m["content"]}
-                for m in self.current_conv["messages"]
-            ]
-            selected_model = self.model_combo.get() or DEFAULT_MODEL
-            temperature = float(self.temp_var.get())
-            use_web_search = bool(self.ws_enabled.get())
+            if selected_api == "Chat Completions (/chat/completions)":
+                messages = [
+                    {"role": m["role"], "content": m["content"]}
+                    for m in self.current_conv["messages"]
+                ]
+                selected_model = self.model_combo.get() or DEFAULT_MODEL
+                temperature = float(self.temp_var.get())
+                use_web_search = bool(self.ws_enabled.get())
 
-            result = chat_completions(
-                messages=messages,
-                model=selected_model,
-                temperature=temperature,
-                use_web_search=use_web_search,  # <- only adds web_search_options when True
-            )
+                result = chat_completions(
+                    messages=messages,
+                    model=selected_model,
+                    temperature=temperature,
+                    use_web_search=use_web_search,  # <- only adds web_search_options when True
+                )
 
-            reply = result["content"] or "(empty response)"
-            append_message(self.current_conv, "assistant", reply)
+                reply = result["content"] or "(empty response)"
+                append_message(self.current_conv, "assistant", reply)
 
-            # Comprehensive log (api + variables + response). No secrets included.
-            api_base = os.getenv("THUCCHIEN_API_BASE", "https://api.thucchien.ai")
-            log_payload = {
-                "type": "api.call",
-                "api": "/chat/completions",
-                "conversationId": self.current_conv["id"],
-                "request": {
-                    "api_base": api_base,
-                    "model": selected_model,
-                    "temperature": temperature,
-                    "use_web_search": use_web_search,
-                    "web_search_options": {"search_context_size": "medium"} if use_web_search else None,
-                    "messages": messages,
-                },
-                "response": result["raw"],  # LiteLLM response (JSON-serializable)
-                "latency_ms": int((time.time() - start) * 1000),
-                "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            }
-            log_path = log_json(log_payload)
+                # Comprehensive log (api + variables + response). No secrets included.
+                api_base = os.getenv("THUCCHIEN_API_BASE", "https://api.thucchien.ai")
+                log_payload = {
+                    "type": "api.call",
+                    "api": "/chat/completions",
+                    "conversationId": self.current_conv["id"],
+                    "request": {
+                        "api_base": api_base,
+                        "model": selected_model,
+                        "temperature": temperature,
+                        "use_web_search": use_web_search,
+                        "web_search_options": {"search_context_size": "medium"} if use_web_search else None,
+                        "messages": messages,
+                    },
+                    "response": result["raw"],  # LiteLLM response (JSON-serializable)
+                    "latency_ms": int((time.time() - start) * 1000),
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+                log_path = log_json(log_payload)
 
-            self._on_api_done(True, f"Done. Log: {log_path}")
+                self._on_api_done(True, f"Done. Log: {log_path}")
+            elif selected_api == "Video Generation":
+                prompt = self.input_box.get("1.0", tk.END).strip() # Get prompt from input box
+                selected_model = self.model_combo.get() # Should be veo-3.0-generate-001
+                negative_prompt = self.negative_prompt_var.get()
+                aspect_ratio = self.aspect_ratio_var.get()
+                resolution = self.resolution_var.get()
+                person_generation = self.person_generation_var.get()
+
+                self.status.set("Starting video generation...")
+                video_result = generate_video_api_call(
+                    prompt=prompt,
+                    model=selected_model,
+                    negative_prompt=negative_prompt,
+                    aspect_ratio=aspect_ratio,
+                    resolution=resolution,
+                    person_generation=person_generation
+                )
+                video_id = video_result["video_id"]
+                video_uri = video_result["video_uri"]
+
+                # Download the video
+                self.status.set(f"Video generated. Downloading video {video_id}...")
+                video_content = download_video_api_call(video_id)
+
+                # Save to a temporary file and provide a link
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", mode="wb") as temp_video_file:
+                    temp_video_file.write(video_content)
+                    temp_video_path = temp_video_file.name
+
+                reply = f"Video generated successfully! [Download Video]({temp_video_path}) [Open in Browser]({video_uri})"
+                append_message(self.current_conv, "assistant", reply)
+
+                log_payload = {
+                    "type": "api.call",
+                    "api": "Video Generation",
+                    "conversationId": self.current_conv["id"],
+                    "request": {
+                        "prompt": prompt,
+                        "model": selected_model,
+                        "negativePrompt": negative_prompt,
+                        "aspectRatio": aspect_ratio,
+                        "resolution": resolution,
+                        "personGeneration": person_generation,
+                    },
+                    "response": {"video_id": video_id, "video_uri": video_uri},
+                    "latency_ms": int((time.time() - start) * 1000),
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+                log_path = log_json(log_payload)
+
+                self._on_api_done(True, f"Video generation complete. Log: {log_path}")
+            else:
+                self._on_api_done(False, "Unknown API selected.")
+
         except Exception as e:
             log_path = log_json({
                 "type": "api.error",
-                "api": "/chat/completions",
+                "api": selected_api,
                 "conversationId": getattr(self.current_conv, "id", None),
                 "error": {"message": str(e)},
                 "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
