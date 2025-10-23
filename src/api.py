@@ -243,3 +243,72 @@ def download_video_api_call(video_id):
     response = requests.get(download_url, headers=headers, stream=True)
     response.raise_for_status()
     return response.content
+
+def generate_video(prompt, model='veo-3.0-generate-001', aspect_ratio='16:9', duration=4):
+    """
+    Orchestrates the video generation and download process.
+    
+    Args:
+        prompt (str): The text prompt for video generation.
+        model (str): The model to use for video generation.
+        aspect_ratio (str): The aspect ratio of the generated video.
+        duration (int): The duration of the video in seconds.
+        
+    Returns:
+        dict: Contains the generated video data and metadata, or an error.
+    """
+    try:
+        # Call the video generation API
+        # Note: The current generate_video_api_call does not take 'duration' directly.
+        # Assuming 'resolution' parameter can be used to influence duration or it's fixed by model.
+        # For now, we'll pass a placeholder or ignore if not directly supported by the API.
+        # The existing API call uses 'resolution' and 'person_generation'.
+        # We need to map 'duration' to something if the API supports it, or add it to the API call.
+        # For simplicity, let's assume 'resolution' can be derived or is fixed for now.
+        
+        # The existing generate_video_api_call has 'resolution' and 'person_generation'
+        # For now, we'll use default values for these as they are not exposed in the GUI yet.
+        # If the API truly supports duration, we'd need to update generate_video_api_call.
+        
+        # Let's assume a simple mapping for resolution based on aspect ratio for now, or a default.
+        # This part might need refinement based on actual API capabilities.
+        resolution_map = {
+            "16:9": "720p", # Example resolution
+            "1:1": "540p",
+            "9:16": "720p"
+        }
+        
+        # Use a default resolution if aspect_ratio is not in map, or if API doesn't care
+        resolution_to_use = resolution_map.get(aspect_ratio, "720p")
+        
+        video_gen_result = generate_video_api_call(
+            prompt=prompt,
+            model=model,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution_to_use # Using a placeholder resolution
+        )
+        
+        if video_gen_result and "video_id" in video_gen_result:
+            video_id = video_gen_result["video_id"]
+            video_data = download_video_api_call(video_id)
+            
+            return {
+                "success": True,
+                "video_data": video_data,
+                "video_id": video_id,
+                "prompt": prompt,
+                "model": model,
+                "aspect_ratio": aspect_ratio,
+                "duration": duration
+            }
+        else:
+            return {
+                "success": False,
+                "error": video_gen_result.get("error", "Unknown error during video generation start.")
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }

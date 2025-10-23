@@ -1,12 +1,12 @@
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
-from .paths import ensure_all_dirs
-from .conversations import list_conversations, create_conversation, load_conversation, append_message
-from .api import chat_completions
-from .logger import log_json
+from src.paths import ensure_all_dirs
+from src.conversations import list_conversations, create_conversation, load_conversation, append_message
+from src.api import chat_completions
+from src.logger import log_json
 import os
 from dotenv import load_dotenv
-from .gui import launch
+from src.gui import launch
 
 load_dotenv()
 
@@ -83,4 +83,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
