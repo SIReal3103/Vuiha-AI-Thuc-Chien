@@ -28,7 +28,7 @@ except Exception:
     CHAT_MODELS = [
         {"name": "Gemini 2.5 Pro", "value": "gemini-2.5-pro"},
         {"name": "Gemini 2.5 Flash", "value": "gemini-2.5-flash"},
-        {"name": "Veo 3.1 (preview)", "value": "veo-3.1-generate-preview"},
+        {"name": "veo-3.0-generate-001", "value": "veo-3.0-generate-001"},
         {"name": "Gemini 2.5 Flash Preview TTS", "value": "gemini-2.5-flash-preview-tts"},
         {"name": "Gemini 2.5 Pro Preview TTS", "value": "gemini-2.5-pro-preview-tts"},
     ]
@@ -130,9 +130,9 @@ class ChatGUI(tk.Tk):
 
         ttk.Label(self.video_params_frame, text="Video Model:").grid(row=1, column=0, sticky="w", pady=(0, 6))
         self.video_model_combo = ttk.Combobox(
-            self.video_params_frame, values=["veo-3.1-generate-preview"], width=30, state="readonly"
+            self.video_params_frame, values=["veo-3.0-generate-001"], width=30, state="readonly"
         )
-        self.video_model_combo.set("veo-3.1-generate-preview")
+        self.video_model_combo.set("veo-3.0-generate-001")
         self.video_model_combo.grid(row=1, column=1, sticky="w", padx=(6, 0), pady=(0, 6))
 
         ttk.Label(self.video_params_frame, text="Aspect Ratio:").grid(row=2, column=0, sticky="w", pady=(0, 6))
@@ -225,8 +225,8 @@ class ChatGUI(tk.Tk):
             self.ws_check.pack_forget()
             self.temp_spin.pack_forget()
             self.video_params_frame.grid(row=0, column=0, sticky="we", pady=(0, 6))
-            self.model_combo.config(values=["veo-3.1-generate-preview"])
-            self.model_combo.set("veo-3.1-generate-preview")
+            self.model_combo.config(values=["veo-3.0-generate-001"])
+            self.model_combo.set("veo-3.0-generate-001")
         else:
             self.video_params_frame.grid_forget()
             self.ws_check.pack(side="left", padx=(12, 6))
@@ -279,7 +279,7 @@ class ChatGUI(tk.Tk):
                 prefix = "You" if role == "user" else ("Assistant" if role == "assistant" else role)
                 self.history.insert(tk.END, f"{prefix}:\n")
                 if message_type == "image" and "image_path" in m:
-                    self._display_image_in_chat(m["image_path"], content, m.get('filename', 'image.png'))
+                    self._display_image_in_chat(m["image_path"], content, m.get("filename", "image.png"))
                 else:
                     self.history.insert(tk.END, f"{content}\n\n")
         self.history.config(state="disabled")
@@ -386,13 +386,15 @@ class ChatGUI(tk.Tk):
             log_path = log_json(log_payload)
             self._on_api_done(True, f"Done. Log: {log_path}")
         except Exception as e:
-            log_path = log_json({
-                "type": "api.error",
-                "api": "/chat/completions",
-                "conversationId": getattr(self.current_conv, "id", None),
-                "error": {"message": str(e)},
-                "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            })
+            log_path = log_json(
+                {
+                    "type": "api.error",
+                    "api": "/chat/completions",
+                    "conversationId": getattr(self.current_conv, "id", None),
+                    "error": {"message": str(e)},
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+            )
             self._on_api_done(False, f"Error: {e}. Logged at: {log_path}")
 
     def _call_video_api_threadsafe(self):
@@ -412,24 +414,12 @@ class ChatGUI(tk.Tk):
                 self._on_api_done(False, "Error: Provide a prompt or at least one image (first/last/reference).")
                 return
 
-            # ---- Enforce Veo 3.1 constraints ----
-            # Reference images require 8s and 16:9
-            if reference_images:
-                if duration != 8:
-                    duration = 8
-                if aspect_ratio != "16:9":
-                    aspect_ratio = "16:9"
-
-            # Interpolation (first/last) works best at 8s
-            if first_frame_image_data or last_frame_image_data:
-                if duration != 8:
-                    duration = 8
 
             # Person generation:
             # - text-to-video only: allow_all
-            # - image-to-video / interpolation / referenceImages: allow_adult
+            # - when any images are used: allow_adult
             is_image_mode = bool(first_frame_image_data or last_frame_image_data or reference_images)
-            person_generation = 'allow_adult' if is_image_mode else 'allow_all'
+            person_generation = "allow_adult" if is_image_mode else "allow_all"
 
             result = generate_video(
                 prompt=prompt,
@@ -440,7 +430,7 @@ class ChatGUI(tk.Tk):
                 person_generation=person_generation,
                 reference_images=reference_images if reference_images else None,
                 first_frame_image_data=first_frame_image_data,
-                last_frame_image_data=last_frame_image_data
+                last_frame_image_data=last_frame_image_data,
             )
 
             # Clear images after call
@@ -463,10 +453,10 @@ class ChatGUI(tk.Tk):
                     self.current_conv,
                     "assistant",
                     f"Generated video using {model}\n"
-                    f"- Prompt: {prompt[:180]}{'...' if len(prompt)>180 else ''}\n"
-                    f"- Duration: {duration}s | Aspect Ratio: {aspect_ratio}\n"
+                    f"- Prompt: {prompt[:180]}{'...' if len(prompt) > 180 else ''}\n"
+                    f"- Duration: {duration}s | Aspect Ratio: {aspect_ratio} | Resolution: {result.get('resolution')}\n"
                     f"- First frame: {result.get('first_frame_present')} | Last frame: {result.get('last_frame_present')} | Ref imgs: {result.get('reference_images')}\n"
-                    f"- Saved to: {video_path}"
+                    f"- Saved to: {video_path}",
                 )
 
                 log_payload = {
@@ -484,10 +474,7 @@ class ChatGUI(tk.Tk):
                         "reference_images_count": len(reference_images) if reference_images else 0,
                         "person_generation": person_generation,
                     },
-                    "response": {
-                        "video_id": result.get("video_id"),
-                        "path": video_path
-                    },
+                    "response": {"video_id": result.get("video_id"), "path": video_path, "resolution": result.get("resolution")},
                     "latency_ms": int((time.time() - start) * 1000),
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 }
@@ -498,13 +485,15 @@ class ChatGUI(tk.Tk):
                 self._on_api_done(False, f"Video generation failed: {result['error']}")
 
         except Exception as e:
-            log_path = log_json({
-                "type": "api.error",
-                "api": "/video/generation",
-                "conversationId": getattr(self.current_conv, "id", None),
-                "error": {"message": str(e)},
-                "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            })
+            log_path = log_json(
+                {
+                    "type": "api.error",
+                    "api": "/video/generation",
+                    "conversationId": getattr(self.current_conv, "id", None),
+                    "error": {"message": str(e)},
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+            )
             self._on_api_done(False, f"Error: {e}. Logged at: {log_path}")
 
     def _save_video(self, video_data, filename):
@@ -534,7 +523,7 @@ class ChatGUI(tk.Tk):
             return
         file_path = filedialog.askopenfilename(
             title="Select an image",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")],
         )
         if file_path:
             try:
@@ -555,7 +544,7 @@ class ChatGUI(tk.Tk):
             return
         file_path = filedialog.askopenfilename(
             title="Select a first frame image for video generation",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")],
         )
         if file_path:
             try:
@@ -575,7 +564,7 @@ class ChatGUI(tk.Tk):
             return
         file_path = filedialog.askopenfilename(
             title="Select a last frame image for video generation",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")],
         )
         if file_path:
             try:
@@ -595,7 +584,7 @@ class ChatGUI(tk.Tk):
             return
         file_paths = filedialog.askopenfilenames(
             title="Select up to 3 reference images",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")],
         )
         if file_paths:
             try:
@@ -683,7 +672,7 @@ class ImageGeneratorWindow(tk.Toplevel):
         ttk.Label(topbar, text="Aspect Ratio:").pack(side="left")
         self.ratio_var = tk.StringVar(value="1:1")
         self.ratio_combo = ttk.Combobox(topbar, textvariable=self.ratio_var, width=10)
-        self.ratio_combo['values'] = ["1:1", "16:9", "9:16", "4:3", "3:4"]
+        self.ratio_combo["values"] = ["1:1", "16:9", "9:16", "4:3", "3:4"]
         self.ratio_combo.pack(side="left", padx=(6, 12))
 
         api_base = os.getenv("THUCCHIEN_API_BASE", "https://api.thucchien.ai")
@@ -727,7 +716,7 @@ class ImageGeneratorWindow(tk.Toplevel):
         self.current_image_data = None
         self.current_image_filename = None
 
-        self.bind('<Escape>', lambda e: self.on_close())
+        self.bind("<Escape>", lambda e: self.on_close())
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     # Conversations
@@ -778,7 +767,7 @@ class ImageGeneratorWindow(tk.Toplevel):
                 prefix = "You" if role == "user" else ("Assistant" if role == "assistant" else role)
                 self.history.insert(tk.END, f"{prefix}:\n")
                 if message_type == "image" and "image_path" in m:
-                    self._display_image_in_chat(m["image_path"], content, m.get('filename', 'image.png'))
+                    self._display_image_in_chat(m["image_path"], content, m.get("filename", "image.png"))
                 else:
                     self.history.insert(tk.END, f"{content}\n\n")
         self.history.config(state="disabled")
@@ -848,7 +837,7 @@ class ImageGeneratorWindow(tk.Toplevel):
                 prompt=prompt,
                 model=self.model_combo.get(),
                 aspect_ratio=self.ratio_var.get(),
-                image_context=image_context if image_context else None
+                image_context=image_context if image_context else None,
             )
 
             if result["success"]:
@@ -860,7 +849,7 @@ class ImageGeneratorWindow(tk.Toplevel):
                     "assistant",
                     f"Generated image using {self.model_combo.get()} based on: '{prompt}'",
                     result["image_data"],
-                    filename
+                    filename,
                 )
                 self._on_image_done(True, f"Image generated and saved: {filename}", image_path)
                 self.parent.current_conv = load_conversation(self.current_conv_id)
@@ -872,12 +861,9 @@ class ImageGeneratorWindow(tk.Toplevel):
                     "request": {
                         "prompt": prompt,
                         "model": self.model_combo.get(),
-                        "aspect_ratio": self.ratio_var.get()
+                        "aspect_ratio": self.ratio_var.get(),
                     },
-                    "response": {
-                        "filename": filename,
-                        "path": saved_path
-                    },
+                    "response": {"filename": filename, "path": saved_path},
                     "latency_ms": int((time.time() - start) * 1000),
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 }
@@ -906,7 +892,7 @@ class ImageGeneratorWindow(tk.Toplevel):
             return
         file_path = filedialog.askopenfilename(
             title="Select an image",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"), ("All files", "*.*")],
         )
         if file_path:
             try:

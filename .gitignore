@@ -32,6 +32,8 @@ venv.bak/
 
 # --- Cache / Temporary ---
 logs/
+generated_videos/
+generated_images/
 data/conversations/*.json
 data/conversations.index.json
 .idea/
