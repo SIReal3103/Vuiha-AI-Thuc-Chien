@@ -328,21 +328,46 @@ class ChatGUI(tk.Tk):
 
                 self._on_api_done(True, f"Done. Log: {log_path}")
             elif selected_api == "Video Generation":
-                prompt = self.input_box.get("1.0", tk.END).strip() # Get prompt from input box
-                selected_model = self.model_combo.get() # Should be veo-3.0-generate-001
-                negative_prompt = self.negative_prompt_var.get()
-                aspect_ratio = self.aspect_ratio_var.get()
-                resolution = self.resolution_var.get()
-                person_generation = self.person_generation_var.get()
+                raw_input_text = self.input_box.get("1.0", tk.END).strip()
+                
+                # Default values from GUI controls
+                prompt_str = raw_input_text
+                selected_model = self.model_combo.get() or 'veo-3.0-generate-001'
+                negative_prompt_val = self.negative_prompt_var.get()
+                aspect_ratio_val = self.aspect_ratio_var.get()
+                resolution_val = self.resolution_var.get()
+                person_generation_val = self.person_generation_var.get()
+
+                # Attempt to parse input as JSON
+                try:
+                    json_input = json.loads(raw_input_text)
+                    if "prompt" in json_input:
+                        prompt_str = json_input["prompt"]
+                    if "negative_prompt" in json_input:
+                        negative_prompt_val = json_input["negative_prompt"]
+                    if "aspectRatio" in json_input:
+                        aspect_ratio_val = json_input["aspectRatio"]
+                    if "resolution" in json_input:
+                        resolution_val = json_input["resolution"]
+                    if "personGeneration" in json_input:
+                        person_generation_val = json_input["personGeneration"]
+                    # Other fields like style, duration, etc., are not directly supported by the API call
+                    # and will be ignored for now.
+                except json.JSONDecodeError:
+                    # Not a JSON input, treat raw_input_text as the prompt string
+                    pass
+
+                if not prompt_str:
+                    raise ValueError("Prompt is required for video generation.")
 
                 self.status.set("Starting video generation...")
                 video_result = generate_video_api_call(
-                    prompt=prompt,
+                    prompt=prompt_str,
                     model=selected_model,
-                    negative_prompt=negative_prompt,
-                    aspect_ratio=aspect_ratio,
-                    resolution=resolution,
-                    person_generation=person_generation
+                    negative_prompt=negative_prompt_val,
+                    aspect_ratio=aspect_ratio_val,
+                    resolution=resolution_val,
+                    person_generation=person_generation_val
                 )
                 video_id = video_result["video_id"]
                 video_uri = video_result["video_uri"]
@@ -364,12 +389,12 @@ class ChatGUI(tk.Tk):
                     "api": "Video Generation",
                     "conversationId": self.current_conv["id"],
                     "request": {
-                        "prompt": prompt,
+                        "prompt": prompt_str,
                         "model": selected_model,
-                        "negativePrompt": negative_prompt,
-                        "aspectRatio": aspect_ratio,
-                        "resolution": resolution,
-                        "personGeneration": person_generation,
+                        "negativePrompt": negative_prompt_val,
+                        "aspectRatio": aspect_ratio_val,
+                        "resolution": resolution_val,
+                        "personGeneration": person_generation_val,
                     },
                     "response": {"video_id": video_id, "video_uri": video_uri},
                     "latency_ms": int((time.time() - start) * 1000),
