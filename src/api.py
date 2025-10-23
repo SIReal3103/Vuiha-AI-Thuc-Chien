@@ -12,97 +12,63 @@ load_dotenv()
 
 API_BASE = os.getenv("THUCCHIEN_API_BASE", "https://api.thucchien.ai")
 API_KEY = os.getenv("THUCCHIEN_API_KEY")
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') # New API key for video generation
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Google Gemini key
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.5-flash")
 DEFAULT_TEMP = float(os.getenv("TEMPERATURE", "1.0"))
 
-# set the API base ON the client
+# Configure LiteLLM client base
 litellm.api_base = API_BASE
 
-# Initialize OpenAI client for image generation
-openai_client = OpenAI(
-    api_key=API_KEY,
-    base_url=API_BASE
-)
+# OpenAI-compatible client for image generation via /chat/completions
+openai_client = OpenAI(api_key=API_KEY, base_url=API_BASE)
 
 
 def chat_completions(messages, model=None, temperature=None, use_web_search=False):
     """
     Call /chat/completions with optional web_search_options.
     If use_web_search=True, adds {"search_context_size": "medium"}.
-    Otherwise, no web_search_options are sent.
     """
     kwargs = {
         "model": model or DEFAULT_MODEL,
         "messages": messages,
         "temperature": DEFAULT_TEMP if temperature is None else temperature,
         "api_key": API_KEY,
-        "api_base": API_BASE,  # explicit
-        "custom_llm_provider": "openai",  # force OpenAI-compatible route
+        "api_base": API_BASE,
+        "custom_llm_provider": "openai",
     }
-
-    # ✅ only include this if user toggled web search
     if use_web_search:
         kwargs["web_search_options"] = {"search_context_size": "medium"}
 
     resp = litellm.completion(**kwargs)
     content = getattr(resp.choices[0].message, "content", str(resp))
-
     return {"raw": resp, "content": content}
 
 
 def generate_image(prompt, model="gemini-2.5-flash-image-preview", aspect_ratio="1:1", n=1, image_context=None):
     """
-    Generate an image using the OpenAI library with chat completions API.
-    
-    Args:
-        prompt (str): The text prompt for image generation
-        model (str): The model to use for image generation (default: imagen-4)
-        aspect_ratio (str): The aspect ratio of the generated image (default: "1:1")
-        n (int): Number of images to generate (default: 1)
-        image_context (list): List of image data bytes to use as context
-    
-    Returns:
-        dict: Contains the generated image data and metadata
+    Generate an image using the OpenAI-compatible chat completions API.
     """
     try:
-        # Build message content with optional image context
         content = [{"type": "text", "text": prompt}]
-        
-        # Add image context if provided
         if image_context:
             for img_data in image_context:
                 img_b64 = base64.b64encode(img_data).decode('utf-8')
-                content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/png;base64,{img_b64}"
-                    }
-                })
-        
-        # Use OpenAI client with chat completions for image generation
+                content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}})
+
         response = openai_client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": content}],
             modalities=["image"]
         )
-        
-        # Process the response
+
         if response and response.choices and len(response.choices) > 0:
             message = response.choices[0].message
+            # Expect message.images[0].image_url.url to be a data URL
             if hasattr(message, 'images') and message.images:
-                # Get the base64 string from the response
                 base64_string = message.images[0].get("image_url", {}).get("url", "")
-                
                 if base64_string:
-                    # Handle data URL format (data:image/png;base64,...)
-                    if ',' in base64_string:
-                        header, encoded = base64_string.split(',', 1)
-                    else:
-                        encoded = base64_string
-                    
+                    encoded = base64_string.split(',', 1)[1] if ',' in base64_string else base64_string
                     image_data = base64.b64decode(encoded)
-                    
                     return {
                         "success": True,
                         "image_data": image_data,
@@ -112,71 +78,78 @@ def generate_image(prompt, model="gemini-2.5-flash-image-preview", aspect_ratio=
                         "aspect_ratio": aspect_ratio
                     }
                 else:
-                    return {
-                        "success": False,
-                        "error": "No base64 image data in response"
-                    }
+                    return {"success": False, "error": "No base64 image data in response"}
             else:
-                return {
-                    "success": False,
-                    "error": "No images in response message"
-                }
+                return {"success": False, "error": "No images in response message"}
         else:
-            return {
-                "success": False,
-                "error": "No choices in response"
-            }
-    
+            return {"success": False, "error": "No choices in response"}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 def save_image(image_data, filename):
-    """
-    Save image data to a file.
-    
-    Args:
-        image_data (bytes): The image data in bytes
-        filename (str): The filename to save the image as
-    
-    Returns:
-        str: The path to the saved image
-    """
     os.makedirs("generated_images", exist_ok=True)
     filepath = os.path.join("generated_images", filename)
-    
     with open(filepath, "wb") as f:
         f.write(image_data)
-    
     return filepath
 
 
-def generate_video_api_call(prompt, model='veo-3.0-generate-001', negative_prompt='blurry, low quality',
-                            aspect_ratio='16:9', resolution='700p', person_generation='allow_all'):
+def _b64(img_bytes: bytes) -> str:
+    return base64.b64encode(img_bytes).decode("utf-8")
+
+
+def generate_video_api_call(
+    prompt,
+    model='veo-3.1-generate-preview',   # Veo 3.1 enables referenceImages + first/last frame
+    negative_prompt='blurry, low quality',
+    aspect_ratio='16:9',
+    resolution='720p',
+    duration_seconds=8,
+    person_generation='allow_all',
+    reference_images=None,              # list[bytes] (max 3)
+    first_frame_image_data=None,        # bytes
+    last_frame_image_data=None,         # bytes
+):
     """
-    Calls the ThucChien AI video generation API.
+    Start Veo 3.1 generation with optional reference images and first/last frame.
     """
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is not set in environment variables.")
-    if not prompt:
-        raise ValueError("Prompt is required for video generation.")
+    if not prompt and not first_frame_image_data and not reference_images:
+        raise ValueError("Provide at least a prompt or some images (reference/first frame).")
 
-    # Step 1: Start video generation
     step1_url = f'{API_BASE}/gemini/v1beta/models/{model}:predictLongRunning'
 
-    instance = {'prompt': prompt}
+    # ---- instances[0] ----
+    instance = {'prompt': prompt or ""}
+
+    # first frame goes on the instance as 'image'
+    if first_frame_image_data:
+        instance['image'] = {'bytesBase64Encoded': _b64(first_frame_image_data)}
+
+    # ---- parameters ----
+    parameters = {
+        'aspectRatio': aspect_ratio,            # "16:9" or "9:16" etc.
+        'resolution': resolution,               # "720p" or "1080p" (1080p allowed only at 8s)
+        'durationSeconds': str(duration_seconds),
+        'negativePrompt': negative_prompt or "",
+        'personGeneration': person_generation,  # mode-dependent; we pass through
+    }
+
+    # last frame for interpolation
+    if last_frame_image_data:
+        parameters['lastFrame'] = {'image': {'bytesBase64Encoded': _b64(last_frame_image_data)}}
+
+    # up to 3 reference images
+    if reference_images:
+        parameters['referenceImages'] = [
+            {'image': {'bytesBase64Encoded': _b64(b)}} for b in reference_images[:3]
+        ]
 
     step1_payload = {
         'instances': [instance],
-        'parameters': {
-            'negativePrompt': negative_prompt,
-            'aspectRatio': aspect_ratio,
-            'resolution': resolution,
-            'personGeneration': person_generation
-        }
+        'parameters': parameters
     }
 
     headers = {
@@ -184,114 +157,88 @@ def generate_video_api_call(prompt, model='veo-3.0-generate-001', negative_promp
         'x-goog-api-key': GEMINI_API_KEY
     }
 
-    print(f"Video Generation Request URL: {step1_url}")
-    print(f"Video Generation Request Payload: {json.dumps(step1_payload, indent=2)}")
-    print(f"Video Generation Request Headers: {json.dumps(headers, indent=2)}")
-
     response1 = requests.post(step1_url, json=step1_payload, headers=headers)
-    
     if response1.status_code != 200:
-        print(f"Video Generation Step 1 Error: {response1.status_code} - {response1.text}")
-        response1.raise_for_status() # Raise an exception for HTTP errors
+        raise RuntimeError(f"Video start failed: {response1.status_code} - {response1.text}")
 
     operation_name = response1.json().get('name')
     if not operation_name:
         raise ValueError('No operation name returned from video generation start.')
 
-    # Step 2: Poll for completion (with timeout)
-    max_attempts = 60  # 5 minutes with 5-second intervals
-    attempt = 0
-
-    while attempt < max_attempts:
+    # ---- Poll for completion ----
+    max_attempts = 90  # 90 * 5s = 7.5 min
+    for _ in range(max_attempts):
         step2_url = f'{API_BASE}/gemini/v1beta/{operation_name}'
-        print(f"Polling URL: {step2_url}")
-        response2 = requests.get(step2_url, headers=headers)
-        
-        if response2.status_code != 200:
-            print(f"Video Generation Step 2 Error: {response2.status_code} - {response2.text}")
-            response2.raise_for_status()
-
-        result = response2.json()
-        print(f"Polling Result: {json.dumps(result, indent=2)}")
+        r = requests.get(step2_url, headers=headers)
+        if r.status_code != 200:
+            raise RuntimeError(f"Polling failed: {r.status_code} - {r.text}")
+        result = r.json()
 
         if result.get('done'):
             try:
-                video_uri = result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri']
+                # response.generatedVideos[0].video.uri
+                gv = result['response']['generatedVideos'][0]
+                video_uri = gv['video']['uri']
                 video_id = video_uri.split('/files/')[1].split(':')[0]
                 return {"video_id": video_id, "video_uri": video_uri}
-            except (KeyError, IndexError) as e:
-                print("Unexpected API response:", json.dumps(result, indent=2))
-                raise ValueError(f"Invalid response format from video generation status: {e}")
-
-        attempt += 1
+            except Exception as e:
+                raise ValueError(f"Unexpected completion payload: {e}\n{json.dumps(result, indent=2)}")
         time.sleep(5)
 
     raise TimeoutError('Video generation timeout.')
 
+
 def download_video_api_call(video_id):
     """
-    Downloads a video given its video_id.
-    Returns the content of the video.
+    Downloads a video given its video_id. Returns raw bytes.
     """
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is not set in environment variables.")
 
     download_url = f'{API_BASE}/gemini/download/v1beta/files/{video_id}:download?alt=media'
-    headers = {
-        'x-goog-api-key': GEMINI_API_KEY
-    }
+    headers = {'x-goog-api-key': GEMINI_API_KEY}
     response = requests.get(download_url, headers=headers, stream=True)
     response.raise_for_status()
     return response.content
 
-def generate_video(prompt, model='veo-3.0-generate-001', aspect_ratio='16:9', duration=4):
+
+def generate_video(
+    prompt,
+    model='veo-3.1-generate-preview',
+    aspect_ratio='16:9',
+    duration=8,
+    negative_prompt='blurry, low quality',
+    person_generation='allow_all',
+    reference_images=None,              # list[bytes]
+    first_frame_image_data=None,        # bytes
+    last_frame_image_data=None,         # bytes
+):
     """
-    Orchestrates the video generation and download process.
-    
-    Args:
-        prompt (str): The text prompt for video generation.
-        model (str): The model to use for video generation.
-        aspect_ratio (str): The aspect ratio of the generated video.
-        duration (int): The duration of the video in seconds.
-        
-    Returns:
-        dict: Contains the generated video data and metadata, or an error.
+    Orchestrates Veo 3.1 start + download.
     """
     try:
-        # Call the video generation API
-        # Note: The current generate_video_api_call does not take 'duration' directly.
-        # Assuming 'resolution' parameter can be used to influence duration or it's fixed by model.
-        # For now, we'll pass a placeholder or ignore if not directly supported by the API.
-        # The existing API call uses 'resolution' and 'person_generation'.
-        # We need to map 'duration' to something if the API supports it, or add it to the API call.
-        # For simplicity, let's assume 'resolution' can be derived or is fixed for now.
-        
-        # The existing generate_video_api_call has 'resolution' and 'person_generation'
-        # For now, we'll use default values for these as they are not exposed in the GUI yet.
-        # If the API truly supports duration, we'd need to update generate_video_api_call.
-        
-        # Let's assume a simple mapping for resolution based on aspect ratio for now, or a default.
-        # This part might need refinement based on actual API capabilities.
-        resolution_map = {
-            "16:9": "720p", # Example resolution
-            "1:1": "540p",
-            "9:16": "720p"
-        }
-        
-        # Use a default resolution if aspect_ratio is not in map, or if API doesn't care
-        resolution_to_use = resolution_map.get(aspect_ratio, "720p")
-        
+        # Resolution heuristic
+        if duration == 8 and aspect_ratio == "16:9":
+            resolution_to_use = "1080p"  # allowed at 8s
+        else:
+            resolution_to_use = "720p"
+
         video_gen_result = generate_video_api_call(
             prompt=prompt,
             model=model,
             aspect_ratio=aspect_ratio,
-            resolution=resolution_to_use # Using a placeholder resolution
+            resolution=resolution_to_use,
+            duration_seconds=duration,
+            negative_prompt=negative_prompt,
+            person_generation=person_generation,
+            reference_images=reference_images,
+            first_frame_image_data=first_frame_image_data,
+            last_frame_image_data=last_frame_image_data,
         )
-        
+
         if video_gen_result and "video_id" in video_gen_result:
             video_id = video_gen_result["video_id"]
             video_data = download_video_api_call(video_id)
-            
             return {
                 "success": True,
                 "video_data": video_data,
@@ -299,16 +246,13 @@ def generate_video(prompt, model='veo-3.0-generate-001', aspect_ratio='16:9', du
                 "prompt": prompt,
                 "model": model,
                 "aspect_ratio": aspect_ratio,
-                "duration": duration
+                "duration": duration,
+                "negative_prompt": negative_prompt,
+                "reference_images": bool(reference_images),
+                "first_frame_present": bool(first_frame_image_data),
+                "last_frame_present": bool(last_frame_image_data),
             }
         else:
-            return {
-                "success": False,
-                "error": video_gen_result.get("error", "Unknown error during video generation start.")
-            }
-            
+            return {"success": False, "error": "Unknown error starting generation."}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
